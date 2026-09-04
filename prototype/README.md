@@ -4,9 +4,9 @@ Telegram bot: send a vacancy (hh.ru link or pasted text) and a candidate's resum
 
 This is `prototype/` — the harness's mode-gate sandbox (`.assistant/mode.json` = `prototype`). See `../CLAUDE.md` for the harness install and the Hermes-vs-plain-Python deviation, `../.assistant/decisions.md` for D-1..D-9, `../.assistant/open-questions.md` for what's still pending client confirmation.
 
-## Known limitation — read before demoing
+## hh.ru vacancy links — how they actually work
 
-**hh.ru vacancy links do not currently work.** hh.ru closed unauthorized public API access in April 2026 (verified live, see D-9). Sending a hh.ru link produces a clear error message; **paste the vacancy text directly instead** — that path is fully implemented and tested.
+hh.ru closed unauthorized `api.hh.ru` access in April 2026 (verified live, D-9) — but `vacancy.py` reads the **public vacancy webpage's** embedded JSON-LD instead (D-10), which needs no login and works today; confirmed against a real live vacancy. Pasting vacancy text directly also works, as an alternative input. Hidden/direct vacancies (not on the public page at all) are still out of scope — see OQ-5.
 
 ## Setup
 
@@ -25,7 +25,7 @@ python main.py
 python -m pytest -q
 ```
 
-11 tests, all passing as of 2026-09-04: deterministic red-flag checks (date overlaps, gaps, AI-generated-text heuristic), card rendering, vacancy fetch (mocked HTTP, including a regression test for the 403 case above).
+12 tests, all passing as of 2026-09-04: deterministic red-flag checks (date overlaps, gaps, AI-generated-text heuristic), card rendering, vacancy fetch (mocked HTTP: JSON-LD success, 404, missing-structured-data cases).
 
 ## What's NOT tested yet
 
