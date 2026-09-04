@@ -1,6 +1,6 @@
 # Candidate Screening Bot — prototype
 
-Telegram bot: send a vacancy (hh.ru link or pasted text) and a candidate's resume (PDF/DOCX/TXT file, or pasted text) in either order; get back a candidate card (verdict, green/red flags with quotes, interview questions).
+Telegram bot: send a vacancy (hh.ru link or pasted text), then a candidate's resume (PDF/DOCX/TXT file, or pasted text) — vacancy first, confirmed immediately, then resume (D-21; not "any order", see decisions.md for why). Vacancy and resume can also be sent together in one message, or a resume file with the vacancy as its caption (D-22). Get back a candidate card (verdict, green/red flags with quotes, interview questions).
 
 This is `prototype/` — the harness's mode-gate sandbox (`.assistant/mode.json` = `prototype`). See `../CLAUDE.md` for the harness install and the Hermes-vs-plain-Python deviation, `../.assistant/decisions.md` for D-1..D-9, `../.assistant/open-questions.md` for what's still pending client confirmation.
 
@@ -19,13 +19,24 @@ cp .env.example .env            # fill in TELEGRAM_BOT_TOKEN and ANTHROPIC_API_K
 python main.py
 ```
 
+## LLM calls — routed through Effective's LiteLLM gateway
+
+`screening.py` calls the Anthropic SDK with `base_url=LITELLM_BASE_URL` (default `https://llm.effective.land/anthropic`, D-17) instead of talking to `api.anthropic.com` directly. That means:
+
+- `ANTHROPIC_API_KEY` in `.env` must be the gateway's **virtual key**, not a personal `console.anthropic.com` key. Ask whoever admins `llm.effective.land` for one.
+- `ANTHROPIC_MODEL` must be a model name/alias the gateway actually serves — verify with the gateway admin or `docs.litellm.ai` before assuming `claude-sonnet-5` resolves as-is; if the gateway rejects the model name, that's the first thing to check.
+- To bypass the gateway entirely (e.g. it's down, or for a quick local test with a personal key), set `LITELLM_BASE_URL=` (empty) in `.env` — the SDK then calls Anthropic directly.
+- Endpoint shape: `<base_url>/v1/messages` is appended by the SDK automatically — don't add `/v1/messages` to `LITELLM_BASE_URL` yourself. Reference: [LiteLLM supported endpoints](https://docs.litellm.ai/docs/supported_endpoints), [Anthropic passthrough](https://docs.litellm.ai/docs/pass_through/anthropic_completion).
+
 ## Run tests
 
 ```bash
 python -m pytest -q
 ```
 
-12 tests, all passing as of 2026-09-04: deterministic red-flag checks (date overlaps, gaps, AI-generated-text heuristic), card rendering, vacancy fetch (mocked HTTP: JSON-LD success, 404, missing-structured-data cases).
+22 tests, all passing as of 2026-09-04: deterministic red-flag checks (date overlaps, gaps, AI-generated-text heuristic — including a regression test for the em-dash/date-range false-positive fixed in D-18), card rendering, vacancy fetch (mocked HTTP: JSON-LD success, 404, missing-structured-data cases), small-talk short-circuit (D-20), combined-message splitting (D-22).
+
+See `tests/manual_cases/README.md` for 5 self-sourced real-vacancy + synthetic-resume pairs to run through the live bot as a smoke test while Anton's own 5 real cases are still pending.
 
 ## What's NOT tested yet
 

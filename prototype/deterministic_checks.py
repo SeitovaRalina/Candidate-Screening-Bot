@@ -166,7 +166,11 @@ def check_ai_generated_text_pattern(resume_text: str) -> list[Flag]:
     hits = [word for word in _AI_BUZZWORDS if word in lower]
 
     word_count = max(len(resume_text.split()), 1)
-    em_dash_count = resume_text.count("—") + resume_text.count("--")
+    # Em-dashes used as "2020 — 2024" date-range separators are near-universal
+    # in RU resumes and must not count toward the AI-text signal, or almost
+    # any resume with a few jobs listed trips this on dash density alone.
+    date_range_dashes = sum(match.group(0).count("—") for match in _YEAR_RANGE_RE.finditer(resume_text))
+    em_dash_count = max(resume_text.count("—") + resume_text.count("--") - date_range_dashes, 0)
     em_dash_rate = em_dash_count / word_count * 100
 
     flags: list[Flag] = []

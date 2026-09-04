@@ -10,7 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+
+# Routed through Effective's internal LiteLLM gateway (llm.effective.land), not
+# api.anthropic.com directly - ANTHROPIC_API_KEY holds the gateway's virtual key
+# (issued by whoever admins the gateway), not a raw Anthropic key. Empty
+# LITELLM_BASE_URL falls back to calling Anthropic directly, for local testing
+# with a personal key if the gateway is ever unreachable.
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+LITELLM_BASE_URL = os.environ.get("LITELLM_BASE_URL", "https://llm.effective.land")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 
 # Client requirement (2026-09-04, reply to communications/2026-09-04-kickoff-followup.md

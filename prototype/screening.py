@@ -18,7 +18,7 @@ from pathlib import Path
 
 import anthropic
 
-from config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL
+from config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL, LITELLM_BASE_URL
 from models import CandidateCard, Flag, VacancyInfo
 
 _CRITERIA_PATH = (
@@ -116,7 +116,10 @@ def _build_user_message(vacancy: VacancyInfo, resume_text: str, pre_findings: li
 
 
 def screen_candidate(*, vacancy: VacancyInfo, resume_text: str, pre_findings: list[Flag]) -> CandidateCard:
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    # base_url=None (LITELLM_BASE_URL="") makes the SDK call api.anthropic.com
+    # directly; otherwise it hits the LiteLLM gateway's Anthropic-passthrough
+    # route, which appends /v1/messages itself - do not add it here.
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, base_url=LITELLM_BASE_URL or None)
 
     system_prompt = _SYSTEM_PROMPT.format(criteria=_load_criteria())
     user_message = _build_user_message(vacancy, resume_text, pre_findings)

@@ -96,3 +96,18 @@ def test_detects_ai_generated_style():
 def test_no_ai_flag_on_normal_text():
     normal = "Разрабатывал backend на Python, внедрил очередь задач на Celery, сократил время ответа API на 30%."
     assert check_ai_generated_text_pattern(normal) == []
+
+
+def test_no_ai_flag_on_em_dash_date_ranges():
+    """Regression: em-dashes used as "2020 — 2024" date separators (the more
+    common RU-resume convention than a plain hyphen, unlike the fixtures
+    above) must not count toward the dash-density signal by themselves -
+    found via prototype/tests/manual_cases while building self-sourced test
+    pairs, see .assistant/decisions.md D-18.
+    """
+    resume = (
+        "Образование\nМГУ, ВМК\n2016 — 2021\n\n"
+        "Опыт работы\nООО Ромашка\n2021 — н.в.\n\n"
+        "ООО Лютик\n2019 — 2021\n"
+    )
+    assert check_ai_generated_text_pattern(resume) == []

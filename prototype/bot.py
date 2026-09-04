@@ -1,5 +1,21 @@
 """Telegram bot handlers.
 
+Strict two-step flow (D-21): vacancy first, resume second - not "any order".
+An earlier "any order, two plain-text messages" design had no way to tell a
+pasted resume from a pasted vacancy description (both are just "text"), so a
+user sending them in the unexpected order got a silently wrong card instead
+of an error. Fetching+confirming the vacancy immediately (before asking for
+the resume) removes the ambiguity and gives the user visible proof of what
+the bot understood at each step, instead of finding out only after the final
+card comes back garbled.
+
+Combined single-message input is also accepted (D-22): a user may reasonably
+paste the vacancy and resume together in one message, or send the resume
+file with the vacancy text as its caption, rather than as two sends. Both
+are detected and screened immediately, without waiting for a second message.
+See _try_split_combined_message()'s docstring for exactly how much this can
+and can't tell apart - it is a best-effort heuristic split, not a classifier.
+
 Per-chat pending state only pairs one candidate's vacancy+resume together
 across two messages - it is cleared immediately after a card is produced.
 This is NOT cross-candidate memory (see .assistant/open-questions.md OQ-3):
@@ -9,6 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, CommandHandler, filters
@@ -18,19 +35,107 @@ from deterministic_checks import run_all_deterministic_checks
 from resume_extract import ResumeExtractionError, extract_resume_text
 from screening import screen_candidate
 from card import render_card
-from vacancy import VacancyFetchError, fetch_vacancy
+from vacancy import VacancyFetchError, VacancyInfo, fetch_vacancy
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("candidate_screening_bot")
 
 _EMPTY_PENDING = {"vacancy": None, "resume_text": None, "resume_file": None}
 
+_START_MESSAGE = (
+    "Привет! Я проверяю кандидата по вакансии в 2 шага:\n\n"
+    "1️⃣ Сначала пришлите вакансию — ссылку на hh.ru или просто текст описания.\n"
+    "2️⃣ Когда я приму вакансию, пришлите резюме кандидата — файлом (PDF/DOCX/TXT) или текстом.\n\n"
+    "Можно и одним сообщением: вставьте вакансию и резюме вместе (или пришлите файл резюме "
+    "с текстом вакансии в подписи к файлу) — я постараюсь разделить их сама.\n\n"
+    "После этого соберу карточку кандидата с зелёными/красными флагами и вопросами для интервью."
+)
+
+_ASK_FOR_VACANCY = "Пришлите вакансию: ссылку на hh.ru или текст описания вакансии."
+_ASK_FOR_RESUME = "Теперь пришлите резюме кандидата: файлом (PDF/DOCX/TXT) или текстом."
+
+# Not an LLM intent classifier - this bot is a deterministic workflow (D-1),
+# not a freely-conversational agent. This is a narrow, cheap keyword check for
+# the "Привет, что ты умеешь?" case a client will predictably try during a
+# demo before sending a real vacancy - not a general chit-chat handler.
+_SMALL_TALK_PHRASES = ("что ты умеешь", "что ты можешь", "что умеешь", "что можешь", "как дела")
+_SMALL_TALK_WORDS = {"привет", "здравствуй", "здравствуйте", "хай", "hello", "hi", "help", "помощь", "справка"}
+_MAX_SMALL_TALK_LEN = 80  # a real pasted vacancy/resume is essentially never this short
+
+
+def _looks_like_small_talk(text: str) -> bool:
+    if len(text) > _MAX_SMALL_TALK_LEN:
+        return False
+    lower = text.lower()
+    if any(phrase in lower for phrase in _SMALL_TALK_PHRASES):
+        return True
+    tokens = re.findall(r"[a-zа-яё]+", lower)
+    return any(token in _SMALL_TALK_WORDS for token in tokens)
+
+
+# Same section headers deterministic_checks.py already looks for in a resume
+# - reusing that vocabulary instead of inventing a second one.
+_RESUME_SECTION_RE = re.compile(r"(опыт\s+работы|места?\s+работы|резюме\s+кандидата)", re.IGNORECASE)
+_VACANCY_MARKER_RE = re.compile(
+    r"(вакансия|требовани|обязанност|з/?п\b|оклад|ищем|условия\s+работы)", re.IGNORECASE
+)
+# Full link span including an optional scheme, so a split never leaves a
+# stray "https://" behind in the other half - vacancy.py's own _HH_URL_RE
+# only captures "hh.ru/vacancy/<id>" (scheme-agnostic by design, since it
+# only needs the id), which is right for that module but wrong for slicing
+# text here.
+_HH_LINK_SPAN_RE = re.compile(r"(?:https?://)?(?:www\.)?hh\.ru/vacancy/\d+", re.IGNORECASE)
+_MIN_COMBINED_PART_LEN = 60  # below this a "part" is noise, not a real vacancy/resume
+
+
+def _try_split_combined_message(text: str) -> tuple[str, str] | None:
+    """Best-effort split for a single message that contains both the vacancy
+    and the resume, instead of two separate sends.
+
+    Not a classifier - deliberately conservative, and returns None (meaning
+    "treat the whole message as just the vacancy", same as before this
+    feature existed) whenever it isn't fairly confident, rather than risk
+    silently mangling a legitimate single-item message. Two strategies, tried
+    in order:
+
+    1. A resume section header (see deterministic_checks.py's own patterns)
+       appears after some vacancy-marker keyword ("вакансия", "требования",
+       "оклад", ...) or an hh.ru link earlier in the text - split there.
+       The vacancy-marker requirement exists specifically so a resume sent
+       *alone* (its own "Образование"/contact block before "Опыт работы")
+       doesn't get its header block wrongly carved off as a fake "vacancy".
+    2. An hh.ru link is present and the remainder of the text (link removed)
+       is long enough to plausibly be a whole resume on its own, even
+       without a recognizable header - covers "<link> <freeform resume
+       text>" pastes that skip a labeled section.
+
+    Known blind spot: a resume that happens to mention a hiring-sounding word
+    ("компания", "обязанности" as in "мои обязанности были...") before its
+    own experience section could still misfire strategy 1. Acceptable for a
+    same-day prototype; not silent data loss either way since both halves
+    are still used as *something*, just possibly swapped - see D-22.
+    """
+    section_match = _RESUME_SECTION_RE.search(text)
+    if section_match:
+        before = text[: section_match.start()]
+        after = text[section_match.start():].strip()
+        has_vacancy_marker = _HH_LINK_SPAN_RE.search(before) or _VACANCY_MARKER_RE.search(before)
+        before = before.strip()
+        if has_vacancy_marker and len(before) >= _MIN_COMBINED_PART_LEN and len(after) >= _MIN_COMBINED_PART_LEN:
+            return before, after
+
+    hh_match = _HH_LINK_SPAN_RE.search(text)
+    if hh_match:
+        remainder = (text[: hh_match.start()] + text[hh_match.end():]).strip()
+        if len(remainder) >= _MIN_COMBINED_PART_LEN * 2:  # more conservative without a header cue
+            return text[hh_match.start() : hh_match.end()], remainder
+
+    return None
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(
-        "Привет! Пришлите вакансию (ссылку на hh.ru или текст), затем резюме кандидата "
-        "(файлом PDF/DOCX/TXT или текстом) - в любом порядке. Соберу карточку кандидата."
-    )
+    _reset_pending(context)
+    await update.message.reply_text(_START_MESSAGE)
 
 
 def _reset_pending(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -41,49 +146,109 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     message = update.message
     pending = context.chat_data.setdefault("pending", dict(_EMPTY_PENDING))
 
+    if pending["vacancy"] is None:
+        await _handle_vacancy_step(message, context, pending)
+        return
+
+    await _handle_resume_step(message, context, pending)
+
+
+async def _handle_vacancy_step(message, context: ContextTypes.DEFAULT_TYPE, pending: dict) -> None:
+    # Combined case 1: resume file sent now, with the vacancy text as its
+    # caption (D-22) - screen immediately instead of asking for a vacancy
+    # the user already provided.
+    if message.document and message.caption and not _looks_like_small_talk(message.caption.strip()):
+        vacancy_text = message.caption.strip()
+        try:
+            vacancy = await fetch_vacancy(vacancy_text)
+        except VacancyFetchError as exc:
+            logger.warning("vacancy fetch failed (caption): %s", exc)
+            await message.reply_text(f"Вакансия недоступна для парсинга.\n\nПодробности: {exc}")
+            return
+        tg_file = await message.document.get_file()
+        data = await tg_file.download_as_bytearray()
+        pending["vacancy"] = vacancy
+        pending["resume_file"] = (bytes(data), message.document.file_name)
+        await message.reply_text(
+            f"✅ Вакансия принята: {vacancy.title}\nРезюме получено вместе с вакансией, обрабатываю..."
+        )
+        await _finalize_resume_and_screen(message, context, pending)
+        return
+
+    if message.document:
+        await message.reply_text(f"Сначала вакансия, потом резюме. {_ASK_FOR_VACANCY}")
+        return
+    if not message.text:
+        await message.reply_text(_ASK_FOR_VACANCY)
+        return
+
+    text = message.text.strip()
+    if _looks_like_small_talk(text):
+        await message.reply_text(_START_MESSAGE)
+        return
+
+    # Combined case 2: vacancy + resume pasted together as plain text (D-22).
+    split = _try_split_combined_message(text)
+    if split:
+        vacancy_text, resume_text = split
+        try:
+            vacancy = await fetch_vacancy(vacancy_text)
+        except VacancyFetchError as exc:
+            logger.warning("vacancy fetch failed (combined message): %s", exc)
+            await message.reply_text(f"Вакансия недоступна для парсинга.\n\nПодробности: {exc}")
+            return
+        pending["vacancy"] = vacancy
+        pending["resume_text"] = resume_text
+        await message.reply_text(
+            f"✅ Вакансия принята: {vacancy.title}\nРезюме получено в этом же сообщении, обрабатываю..."
+        )
+        await _finalize_resume_and_screen(message, context, pending)
+        return
+
+    try:
+        vacancy = await fetch_vacancy(text)
+    except VacancyFetchError as exc:
+        logger.warning("vacancy fetch failed: %s", exc)
+        # Exact phrasing requested by Anton (reply to kickoff-followup.md item
+        # 2): must lead with this line for any inaccessible/unparseable
+        # vacancy, not a generic technical error.
+        await message.reply_text(f"Вакансия недоступна для парсинга.\n\nПодробности: {exc}")
+        return
+
+    pending["vacancy"] = vacancy
+    await message.reply_text(f"✅ Вакансия принята: {vacancy.title}\n\n{_ASK_FOR_RESUME}")
+
+
+async def _handle_resume_step(message, context: ContextTypes.DEFAULT_TYPE, pending: dict) -> None:
     if message.document:
         tg_file = await message.document.get_file()
         data = await tg_file.download_as_bytearray()
         pending["resume_file"] = (bytes(data), message.document.file_name)
     elif message.text:
-        text = message.text.strip()
-        if pending["vacancy"] is None:
-            pending["vacancy"] = text
-        elif pending["resume_file"] is None and pending["resume_text"] is None:
-            pending["resume_text"] = text
-        else:
-            await message.reply_text("Уже обрабатываю пару вакансия+резюме, подождите результат.")
-            return
+        pending["resume_text"] = message.text.strip()
     else:
-        await message.reply_text("Пришлите текст (вакансия/резюме) или файл резюме (PDF/DOCX/TXT).")
+        await message.reply_text(_ASK_FOR_RESUME)
         return
 
-    have_resume = pending["resume_file"] is not None or pending["resume_text"] is not None
-    if pending["vacancy"] and have_resume:
-        await message.reply_text("Принял вакансию и резюме, обрабатываю...")
-        try:
-            await _run_screening_and_reply(message, pending)
-        except VacancyFetchError as exc:
-            logger.warning("vacancy fetch failed: %s", exc)
-            # Exact phrasing requested by Anton (reply to kickoff-followup.md
-            # item 2): the card/reply must lead with this line for any
-            # inaccessible/unparseable vacancy, not a generic technical error.
-            await message.reply_text(f"Вакансия недоступна для парсинга.\n\nПодробности: {exc}")
-        except ResumeExtractionError as exc:
-            logger.warning("resume extraction failed: %s", exc)
-            await message.reply_text(f"Не удалось прочитать резюме: {exc}")
-        except Exception:  # noqa: BLE001 - top-level handler boundary, must not crash the bot
-            logger.exception("unexpected error during screening")
-            await message.reply_text("Внутренняя ошибка при обработке. Попробуйте ещё раз.")
-        finally:
-            _reset_pending(context)
-    else:
-        missing = "резюме (файл или текст)" if pending["vacancy"] else "вакансию (ссылка hh.ru или текст)"
-        await message.reply_text(f"Принял. Жду ещё: {missing}.")
+    await message.reply_text("Принял резюме, обрабатываю...")
+    await _finalize_resume_and_screen(message, context, pending)
+
+
+async def _finalize_resume_and_screen(message, context: ContextTypes.DEFAULT_TYPE, pending: dict) -> None:
+    try:
+        await _run_screening_and_reply(message, pending)
+    except ResumeExtractionError as exc:
+        logger.warning("resume extraction failed: %s", exc)
+        await message.reply_text(f"Не удалось прочитать резюме: {exc}\n\n{_ASK_FOR_RESUME}")
+        return  # keep the accepted vacancy pending, let them retry the resume only
+    except Exception:  # noqa: BLE001 - top-level handler boundary, must not crash the bot
+        logger.exception("unexpected error during screening")
+        await message.reply_text("Внутренняя ошибка при обработке. Попробуйте ещё раз с /start.")
+    _reset_pending(context)
 
 
 async def _run_screening_and_reply(message, pending: dict) -> None:
-    vacancy = await fetch_vacancy(pending["vacancy"])
+    vacancy: VacancyInfo = pending["vacancy"]
 
     file_bytes, file_name = (None, None)
     if pending["resume_file"] is not None:
