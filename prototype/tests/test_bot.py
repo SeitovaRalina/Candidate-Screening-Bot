@@ -4,7 +4,31 @@ that needs a python-telegram-bot Update/Context double and isn't worth
 building for logic this small; these functions take/return plain
 strings/tuples so they're testable directly.
 """
-from bot import _looks_like_off_topic, _looks_like_small_talk, _try_split_combined_message
+from bot import _detect_kind, _looks_like_off_topic, _looks_like_small_talk, _try_split_combined_message
+
+
+# --- _detect_kind (D-25: content-based routing, order-independent input) ---
+
+_RESUME_WITH_HEADER = (
+    "Смирнов Дмитрий Олегович\nMiddle Python-разработчик\n\n"
+    "Опыт работы:\n2022 - н.в., Senior Python Developer, ООО \"Финтех Решения\""
+)
+
+
+def test_hh_link_detected_as_vacancy():
+    assert _detect_kind("https://hh.ru/vacancy/133660218") == "vacancy"
+
+
+def test_resume_with_header_detected_as_resume():
+    assert _detect_kind(_RESUME_WITH_HEADER) == "resume"
+
+
+def test_vacancy_marker_text_detected_as_vacancy():
+    assert _detect_kind("Ищем Python-разработчика, требования: Django, з/п по итогам собеседования") == "vacancy"
+
+
+def test_marker_free_text_is_ambiguous():
+    assert _detect_kind("Python разработчик, удалёнка, полная занятость") == "ambiguous"
 
 
 def test_unrelated_question_is_off_topic():
