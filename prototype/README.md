@@ -34,16 +34,26 @@ python main.py
 python -m pytest -q
 ```
 
-22 tests, all passing as of 2026-09-04: deterministic red-flag checks (date overlaps, gaps, AI-generated-text heuristic — including a regression test for the em-dash/date-range false-positive fixed in D-18), card rendering, vacancy fetch (mocked HTTP: JSON-LD success, 404, missing-structured-data cases), small-talk short-circuit (D-20), combined-message splitting (D-22).
+34 tests, all passing as of 2026-09-04: deterministic red-flag checks (date overlaps, gaps, AI-generated-text heuristic — including a regression test for the em-dash/date-range false-positive fixed in D-18), card rendering, vacancy fetch (mocked HTTP: JSON-LD success, 404, missing-structured-data cases), small-talk/off-topic short-circuits (D-20), combined-message splitting and content-based routing (D-22/D-25), `screening.py`'s post-processing helpers (D-27: fake-quote filtering, dict-shaped question coercion).
 
-See `tests/manual_cases/README.md` for 5 self-sourced real-vacancy + synthetic-resume pairs to run through the live bot as a smoke test while Anton's own 5 real cases are still pending.
+See `tests/manual_cases/README.md` for 5 self-sourced real-vacancy + synthetic-resume pairs. Ralina ran all 5 end-to-end against the live gateway (2026-09-04, results in `tests/manual_cases/test_results.md`) and that run is what surfaced the three bugs fixed in D-27 — this is now an exercised regression pass, not just a smoke test, while Anton's own 5 real cases (still pending) remain the actual acceptance set.
+
+## Deployment
+
+Running as a `systemd` service (`candidate-screening-bot`, `Restart=on-failure`, enabled on boot) on a VPS Ralina provisioned (2026-09-04, D-26) — chosen because Anton needs to reach the bot independently of her machine being on. No inbound port/public IP is needed for the bot itself (`main.py` uses long polling, outbound-only); the VPS's own Python 3.14 required a one-line `asyncio` fix in `main.py` (D-26) that `python-telegram-bot==21.7` doesn't handle on its own. Server access details are intentionally not written here - ask Ralina.
 
 ## What's NOT tested yet
 
-- `screening.py` (the actual Anthropic API call) has no automated test — it needs a real `ANTHROPIC_API_KEY` and costs real tokens per call. Manually verify end-to-end via the bot itself before the demo.
+- `screening.py`'s actual LLM call path is now exercised live via the manual cases (D-27), but still has no automated (mocked-API) test — a real run costs tokens and depends on gateway availability. `_has_real_quote`/`_as_question_text` (the parts that don't need a live call) are unit-tested.
 - No test uses the client's real resume/vacancy pairs — Anton still owes 5 real cases (see `communications/2026-09-04-kickoff-followup.md` item 7). Add them to `tests/` as the real acceptance set once they arrive, per the eval methodology in `../.memory-bank/tech-details/stack.md`.
 - Resume file parsing (`resume_extract.py`) is untested against a real PDF/DOCX — only the plain-text path is exercised end-to-end so far.
 
 ## Architecture
 
 See `../.memory-bank/tech-details/stack.md` for the full rationale. Short version: a managed pipeline (parse vacancy → extract resume → deterministic checks → LLM screening via forced tool-use → render card), not a freely-exploring agent. Deterministic checks (date overlaps, AI-generated-text lexical heuristic) run in plain code and are merged into the LLM's output unconditionally, so a code-provable finding can never be silently dropped by the model.
+
+## Known outstanding items (2026-09-04, post-demo-prep)
+
+- **Telegram bot token has not been rotated** despite being exposed in chat/logs three times during this build. Revoke and reissue via `@BotFather` (`/revoke`) once the demo is done, then update `.env` on the server.
+- **Small UX gap:** `_looks_like_small_talk`/`_looks_like_off_topic` in `bot.py` don't recognize third-person phrasing like "Что умеет бот?" (only "что ТЫ умеешь") - falls through to the generic off-topic redirect instead of the helpful `/start` explanation. Not fixed yet - flagged, decision pending.
+- **Unexplained parallel work found in the project directory:** a git worktree (`.worktrees/hermes-runtime`) and `swarm-report/hermes-*-plan.md` files appeared during this session, apparently a separate in-progress attempt at porting this bot to a Hermes plugin. Not touched or investigated further (see D-26) - resolve provenance before the next session builds on top of it.
