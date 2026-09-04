@@ -230,6 +230,21 @@ async def _handle_vacancy_step(message, context: ContextTypes.DEFAULT_TYPE, pend
         await _finalize_resume_and_screen(message, context, pending)
         return
 
+    # A lone resume sent at this step (no vacancy marker before it, so
+    # _try_split_combined_message above declined to split it) would otherwise
+    # be silently accepted as "vacancy text" - vacancy.py has no validation,
+    # it treats any string as a valid description. Caught live (2026-09-04):
+    # Ralina sent a resume first, it became "the vacancy", then the real
+    # hh.ru link sent next got treated as raw resume text instead of fetched,
+    # and the LLM call on that garbled pair never produced a usable card.
+    if _RESUME_SECTION_RE.search(text):
+        await message.reply_text(
+            f"Это похоже на резюме, а не на вакансию. {_ASK_FOR_VACANCY}\n\n"
+            "(Если это всё же вакансия — переформулируйте без слов вроде "
+            "\"опыт работы\"/\"место работы\", чтобы я не путала её с резюме.)"
+        )
+        return
+
     try:
         vacancy = await fetch_vacancy(text)
     except VacancyFetchError as exc:
@@ -253,6 +268,18 @@ async def _handle_resume_step(message, context: ContextTypes.DEFAULT_TYPE, pendi
         text = message.text.strip()
         if _looks_like_small_talk(text) or _looks_like_off_topic(text):
             await message.reply_text(f"Я отвечаю только по задаче — проверка кандидата по вакансии. {_ASK_FOR_RESUME}")
+            return
+        # A bare hh.ru link here is almost certainly a vacancy link sent to
+        # the wrong step (e.g. the previous message was mistakenly accepted
+        # as "the vacancy" - see the matching check in _handle_vacancy_step),
+        # not a resume. Short-message threshold only, so a real resume that
+        # happens to mention a link somewhere in a lot of other text isn't
+        # blocked.
+        if len(text) < _MIN_COMBINED_PART_LEN and _HH_LINK_SPAN_RE.search(text):
+            await message.reply_text(
+                "Это похоже на ссылку на вакансию, а не на резюме. Если вакансия уже была принята "
+                f"неправильно (например, резюме кандидата случайно приняли за неё) — начните заново: /start.\n\n{_ASK_FOR_RESUME}"
+            )
             return
         pending["resume_text"] = text
     else:
