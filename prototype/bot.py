@@ -73,6 +73,28 @@ def _looks_like_small_talk(text: str) -> bool:
     return any(token in _SMALL_TALK_WORDS for token in tokens)
 
 
+# Same "off-topic question" gap as small talk (D-20), but for any unrelated
+# question rather than just a greeting - "какая сегодня погода?", "а ты
+# вообще ИИ?" etc. would otherwise get silently swallowed as vacancy/resume
+# text. Not an LLM classifier for the same reasons as _looks_like_small_talk:
+# cheap, deterministic, no dependency on this session's flaky gateway.
+_QUESTION_WORDS = ("что", "как", "почему", "зачем", "сколько", "когда", "кто", "где", "why", "what", "how")
+_MAX_OFF_TOPIC_LEN = 150  # a real vacancy/resume paste is essentially never this short
+
+
+def _looks_like_off_topic(text: str) -> bool:
+    if len(text) > _MAX_OFF_TOPIC_LEN:
+        return False
+    lower = text.lower().strip()
+    looks_like_a_question = lower.endswith("?") or lower.startswith(_QUESTION_WORDS)
+    if not looks_like_a_question:
+        return False
+    has_vacancy_or_resume_marker = (
+        _VACANCY_MARKER_RE.search(text) or _HH_LINK_SPAN_RE.search(text) or _RESUME_SECTION_RE.search(text)
+    )
+    return not has_vacancy_or_resume_marker
+
+
 # Same section headers deterministic_checks.py already looks for in a resume
 # - reusing that vocabulary instead of inventing a second one.
 _RESUME_SECTION_RE = re.compile(r"(опыт\s+работы|места?\s+работы|резюме\s+кандидата)", re.IGNORECASE)
@@ -186,6 +208,9 @@ async def _handle_vacancy_step(message, context: ContextTypes.DEFAULT_TYPE, pend
     if _looks_like_small_talk(text):
         await message.reply_text(_START_MESSAGE)
         return
+    if _looks_like_off_topic(text):
+        await message.reply_text(f"Я отвечаю только по задаче — проверка кандидата по вакансии. {_ASK_FOR_VACANCY}")
+        return
 
     # Combined case 2: vacancy + resume pasted together as plain text (D-22).
     split = _try_split_combined_message(text)
@@ -225,7 +250,11 @@ async def _handle_resume_step(message, context: ContextTypes.DEFAULT_TYPE, pendi
         data = await tg_file.download_as_bytearray()
         pending["resume_file"] = (bytes(data), message.document.file_name)
     elif message.text:
-        pending["resume_text"] = message.text.strip()
+        text = message.text.strip()
+        if _looks_like_small_talk(text) or _looks_like_off_topic(text):
+            await message.reply_text(f"Я отвечаю только по задаче — проверка кандидата по вакансии. {_ASK_FOR_RESUME}")
+            return
+        pending["resume_text"] = text
     else:
         await message.reply_text(_ASK_FOR_RESUME)
         return

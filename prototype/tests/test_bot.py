@@ -4,7 +4,20 @@ that needs a python-telegram-bot Update/Context double and isn't worth
 building for logic this small; these functions take/return plain
 strings/tuples so they're testable directly.
 """
-from bot import _looks_like_small_talk, _try_split_combined_message
+from bot import _looks_like_off_topic, _looks_like_small_talk, _try_split_combined_message
+
+
+def test_unrelated_question_is_off_topic():
+    assert _looks_like_off_topic("А ты вообще ИИ?") is True
+    assert _looks_like_off_topic("Какая сегодня погода?") is True
+
+
+def test_real_vacancy_text_is_not_off_topic():
+    assert _looks_like_off_topic("Ищем Python-разработчика, требования: Django, опыт от 2 лет") is False
+
+
+def test_hh_link_is_not_off_topic():
+    assert _looks_like_off_topic("https://hh.ru/vacancy/130056956") is False
 
 
 def test_greeting_plus_question_is_small_talk():
