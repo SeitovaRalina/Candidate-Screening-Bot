@@ -1,0 +1,1 @@
+{"ok":false,"agentCalls":1,"violations":[{"file":"invalid-model.js","line":1,"column":1,"kind":"invalid-model","snippet":"agent('do the thing', { model: 'gpt-4', effort: 'high' })"}],"exemptions":[],"parseError":null}

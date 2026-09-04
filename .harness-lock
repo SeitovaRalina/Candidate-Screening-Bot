@@ -1,0 +1,380 @@
+{
+  "schema": 1,
+  "harness_version": "1.0.0",
+  "harness_source": "local-checkout@no-git (harness repo at time of install had no .git — see CLAUDE.md deviation note)",
+  "commit_sha": "unknown-no-git-checkout",
+  "installed_at": "2026-09-04T05:38:53.515Z",
+  "last_synced_at": null,
+  "install_method": "manual (time-boxed, skipped /setup interactive flow)",
+  "project_type": 1,
+  "primary_stack": [
+    "backend-python"
+  ],
+  "touch_policy": "preserve-existing-memory-bank",
+  "modules": [],
+  "targets": [],
+  "layout": "single-cli",
+  "skip": [],
+  "files": {
+    ".claude/agents/api.md": {
+      "owner": "harness",
+      "sha256": "5cae5c336a44f294b5ba17346c33c08eebc920c5eb6c97ff5929721c84e6e879"
+    },
+    ".claude/agents/architect.md": {
+      "owner": "harness",
+      "sha256": "93bd83ffb48ee628f5213e320849d56e80865e589ad4b520289ea9d39cb8ee42"
+    },
+    ".claude/agents/backend.md": {
+      "owner": "harness",
+      "sha256": "4ac21645a39c3f72509911de3a91f06d59010a1d563c23830be91aa768eea33b"
+    },
+    ".claude/agents/devops.md": {
+      "owner": "harness",
+      "sha256": "f2262b1576766d68342094826fb4eef19b0f8e23bc3408f1ae539cd84a42ab28"
+    },
+    ".claude/agents/diagnostics.md": {
+      "owner": "harness",
+      "sha256": "e2f3e31ac6e9e0b9a801b8192a0c9d050a62eef2de6ec277f130472fc70616ae"
+    },
+    ".claude/agents/Explore.md": {
+      "owner": "harness",
+      "sha256": "1e2f38e812d1e05fccfae2dc8ca7dda433fcd1afbc3df93433824c95ca44a228"
+    },
+    ".claude/agents/frontend.md": {
+      "owner": "harness",
+      "sha256": "0fe86a251f9c1eb09e11400ab4bd9f68bcd13efa628df18e442df1754ab79e54"
+    },
+    ".claude/agents/researcher.md": {
+      "owner": "harness",
+      "sha256": "fbcea8ee1a39eef1adb70549d85cb1104d6cf5e1f55f788941c097a62fc0e04d"
+    },
+    ".claude/agents/reviewer.md": {
+      "owner": "harness",
+      "sha256": "db0c4d1abbb279dd8425387ac5ef802f685e2040c6f57742bd0b745ca852ae72"
+    },
+    ".claude/agents/security.md": {
+      "owner": "harness",
+      "sha256": "1116cba7e9a7bdcf4a7e715b1cab2b6097df8aea1e5a0b4bddb3ee2d8a65429b"
+    },
+    ".claude/agents/skeptic.md": {
+      "owner": "harness",
+      "sha256": "7a0a40b76dd6e62e70154d820cce428eddffe635e479adb7a46e0e0122e1d0f3"
+    },
+    ".claude/agents/test.md": {
+      "owner": "harness",
+      "sha256": "071edddcaee95156120b7b8d1e74888e6ebe26f6cee00861b551255db3ef8897"
+    },
+    ".claude/agents/tier-critic.md": {
+      "owner": "harness",
+      "sha256": "751771a81536fa6dccf109b0b4f7755d8246c8fe50010d089546acb9de16923f"
+    },
+    ".claude/agents/web.md": {
+      "owner": "harness",
+      "sha256": "2b7a03c8ea21cb3450c1a7c84ec6990ff1d3613c62b571f9eeecc43a220f0801"
+    },
+    ".claude/skills/anti-ai-slop-writing/references/banned-words.md": {
+      "owner": "harness",
+      "sha256": "ba6d917bc9e5fc0c0314204bcafb85cc4f0ad9d254331060cd021efe04cd2fa2"
+    },
+    ".claude/skills/anti-ai-slop-writing/SKILL.md": {
+      "owner": "harness",
+      "sha256": "cdba2a28a62ba57a05b80226f572572907a196717889d1f316ea20eafff69666"
+    },
+    ".claude/skills/contribute/SKILL.md": {
+      "owner": "harness",
+      "sha256": "c0044d4c4d424712f2b1eea96e37b27ebf5e9da9b5d97b006f2da4f97f9e4f62"
+    },
+    ".claude/skills/drift/scripts/ground-truth.sh": {
+      "owner": "harness",
+      "sha256": "77e7bbb9befcb53c639e589a5086094820a59136ca933cb280def34a44815e2b"
+    },
+    ".claude/skills/drift/SKILL.md": {
+      "owner": "harness",
+      "sha256": "b2860185235fd201709108283f0cd4673f075dce4be5e1a5b282dd1be01752c8"
+    },
+    ".claude/skills/elicit/SKILL.md": {
+      "owner": "harness",
+      "sha256": "73aa7b348f37185ea51e83d4440eb8033cfda29efc540d62b66407048aca49a9"
+    },
+    ".claude/skills/implementor/SKILL.md": {
+      "owner": "harness",
+      "sha256": "d74fb4570396211d524df44784b41f0e9c85d47a2ae2f119a1dfd9abf06d22bd"
+    },
+    ".claude/skills/lint-setup/SKILL.md": {
+      "owner": "harness",
+      "sha256": "7dcc7cae18d3c8cd0e7f33d722b1e43287545c9f01ae93d99722c3c95715de1d"
+    },
+    ".claude/skills/onboard/SKILL.md": {
+      "owner": "harness",
+      "sha256": "38fed71247049743479fbcb90805859e0c1349a1c48ddf8b77c191f73aee5f0e"
+    },
+    ".claude/skills/post-feature/SKILL.md": {
+      "owner": "harness",
+      "sha256": "2fb0b30d3c23e2db482daac362291910736d776d7ddfca2004737536335c3270"
+    },
+    ".claude/skills/pre-feature/SKILL.md": {
+      "owner": "harness",
+      "sha256": "09b91df668f8759982e8a33c9ffb9fa3eca03468e28d9ae536c530b128345e9a"
+    },
+    ".claude/skills/routing-audit/scripts/audit.py": {
+      "owner": "harness",
+      "sha256": "f9ae28c43771640cffb7c3312da38f3cdb6650188b37164955dd43f91d88fd8b"
+    },
+    ".claude/skills/routing-audit/scripts/audit.sh": {
+      "owner": "harness",
+      "sha256": "bc123d666305f5399412c61c6cd98494c5dd6be32546e0898080ce01b2fe7f99"
+    },
+    ".claude/skills/routing-audit/SKILL.md": {
+      "owner": "harness",
+      "sha256": "eadb2fc6c9cc1a9d59a83d7e530a5fa7816002ea3cd7fcd743c951634fb0a55c"
+    },
+    ".claude/skills/setup/SKILL.md": {
+      "owner": "harness",
+      "sha256": "88df4a67f496ef83bd45cf0598950096ce6a174bbc3917baf884d211c4ad5cfd"
+    },
+    ".claude/skills/spec-coverage/scripts/coverage.sh": {
+      "owner": "harness",
+      "sha256": "4ff00c396de63163d7e1e172bcb720112da9ea4231e1a572bf181255c25393fa"
+    },
+    ".claude/skills/spec-coverage/SKILL.md": {
+      "owner": "harness",
+      "sha256": "ec7c77741516e57434f72ec78b01bc6c8a19d7ce4fce53541ce7936aac3d7598"
+    },
+    ".claude/skills/spec-defrag/SKILL.md": {
+      "owner": "harness",
+      "sha256": "c47e4aecfd544cad08b2930bcf4d786be32652c5a104f8ac8b33cb344624d4c2"
+    },
+    ".claude/skills/spec-review/SKILL.md": {
+      "owner": "harness",
+      "sha256": "b94df49f1e25aad93f9b1470253dc1d4925e601cff89dd9a08d20b01d9fd1c73"
+    },
+    ".claude/skills/sync/SKILL.md": {
+      "owner": "harness",
+      "sha256": "db305a2611317dd3c417c239dd8fb46518314d6697615da7497fd7e39b7866e6"
+    },
+    ".claude/skills/weekly-digest/SKILL.md": {
+      "owner": "harness",
+      "sha256": "33f2c1f940ed265cace734bf2bb90e9571e7300ef3386b41815fbdaca8f1362f"
+    },
+    ".claude/hooks/.gitkeep": {
+      "owner": "harness",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    ".claude/hooks/cost-cap.sh": {
+      "owner": "harness",
+      "sha256": "d70eab0499a7f3d2f21ecd11e7ed8cf75d86a048fbed8e7b2e31418aaa4c9068"
+    },
+    ".claude/hooks/evidence-gate.sh": {
+      "owner": "harness",
+      "sha256": "a4928e8bafeb3f507607de38fba33412a49f8b8e55ef6af64b40bc8c52b2b98b"
+    },
+    ".claude/hooks/html-slop-gate.sh": {
+      "owner": "harness",
+      "sha256": "68328e17dfbbca8c16626f991aba5506aaf2781e0d58fcbf8c7ba3a82458055a"
+    },
+    ".claude/hooks/inject-state.sh": {
+      "owner": "harness",
+      "sha256": "fe7e27e20198c5fcb955f498f425ca19bed02cec0434ca332e4ef628ba40d7d8"
+    },
+    ".claude/hooks/lint-gate.sh": {
+      "owner": "harness",
+      "sha256": "5dbde3ab685f81638d99659dc751530dfcc3f549831a15d8fd43503014645243"
+    },
+    ".claude/hooks/loop-detect.sh": {
+      "owner": "harness",
+      "sha256": "5f8424bc6a15236ee74c4df2b69860ae15959927f3f3cf540466e396df93c983"
+    },
+    ".claude/hooks/mode-gate.sh": {
+      "owner": "harness",
+      "sha256": "8fabe38e8eebb0a42cd38197282e248572b29e475e754579b9b5a292b65f79f7"
+    },
+    ".claude/hooks/offload-gate.sh": {
+      "owner": "harness",
+      "sha256": "a579e3affd8a46df9a88079b7e4ccdb8192db5f9ea0ed983d7a7fd2e546d8153"
+    },
+    ".claude/hooks/orphan-guard.sh": {
+      "owner": "harness",
+      "sha256": "07ef4a2a5d6f71d3da0cda8d18d9bd8668487715dc4776d9dd8904d1aef54baa"
+    },
+    ".claude/hooks/review-gate.sh": {
+      "owner": "harness",
+      "sha256": "063d1f0479221aab2fbcff98562b0a75546771e704e760c4b003f6a5ee6ad8e5"
+    },
+    ".claude/hooks/self-config-guard.sh": {
+      "owner": "harness",
+      "sha256": "69bd1a79c74ad8892b6ac6a0040bfcafefd409814c39728574b750126fdb0080"
+    },
+    ".claude/hooks/slop-gate.sh": {
+      "owner": "harness",
+      "sha256": "0987f86d16ac2c2ca3b8595cb6adb3a8a4df0dd32aad8eb9609714d250aa18bb"
+    },
+    ".claude/hooks/spec-gate.sh": {
+      "owner": "harness",
+      "sha256": "811a189b4ee63e76b2da460c76463ce3f5bdc989fade7e7e8808feeaeb14a149"
+    },
+    ".claude/hooks/spec-lint.sh": {
+      "owner": "harness",
+      "sha256": "b8188b0222a49d0db43c33303c6c00429819df887b7f5cb76ce2faddcfe97ca3"
+    },
+    ".claude/hooks/terse-inject.sh": {
+      "owner": "harness",
+      "sha256": "fe86b884aa39d90a260f64d03f5b6e584ca36299c188839e984311163aebb3ce"
+    },
+    ".claude/hooks/test-count-guard.sh": {
+      "owner": "harness",
+      "sha256": "a2c283f0efa51ce2c25fa4445e0d621fed5ac4f7f6aa769b2fbc2fb390daa84c"
+    },
+    ".claude/hooks/trace-gate.sh": {
+      "owner": "harness",
+      "sha256": "38520560ae72b24882eae8e6447ee4df15ed127c26bc4d520c214603261228b9"
+    },
+    ".claude/hooks/verify-gate.sh": {
+      "owner": "harness",
+      "sha256": "e3dead7d7002f7e81ae30b43b5741f9d8099cf24dc3608bf0d2a612c00cc88d3"
+    },
+    ".claude/hooks/workflow-tier-gate.sh": {
+      "owner": "harness",
+      "sha256": "d43f9bd543b14f92011d135da5ce1c4e85b04381450596a766fde5997519f8f1"
+    },
+    ".claude/lib/acorn.js": {
+      "owner": "harness",
+      "sha256": "f4ecbb1935ad718f988d8463ec28dedefa31329b397e29c68c8cf6a3050459cd"
+    },
+    ".claude/lib/self-test-fixtures/workflow/clean.expected.json": {
+      "owner": "harness",
+      "sha256": "3bacf56fa20b709687344cb810c0eeba2d5b3b31665d1952f76340afb0b1af5d",
+      "upstream": "tests/fixtures/workflow/clean.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/clean.js": {
+      "owner": "harness",
+      "sha256": "07677cb1f2c8c73634b821a968be90f08a4aa50148a756a967b9256bd4267a0d",
+      "upstream": "tests/fixtures/workflow/clean.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/exempt-empty-reason.expected.json": {
+      "owner": "harness",
+      "sha256": "ba64a0997e16eb58ce7cd37cd74ecd904ebb5bafc6356e260a7f8c5a67d6fc7c",
+      "upstream": "tests/fixtures/workflow/exempt-empty-reason.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/exempt-empty-reason.js": {
+      "owner": "harness",
+      "sha256": "431dd15cd615b3ed60b6b666b066f0bcfa1c1d08ab1bd390dfd08196c674c91d",
+      "upstream": "tests/fixtures/workflow/exempt-empty-reason.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/exempt-with-reason.expected.json": {
+      "owner": "harness",
+      "sha256": "3bf1f42e91374e8357bb3e59870b96f274a2edf1e6d50193a4fbbfd135650c9f",
+      "upstream": "tests/fixtures/workflow/exempt-with-reason.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/exempt-with-reason.js": {
+      "owner": "harness",
+      "sha256": "5f4360add4aca3f5ce64cc56f7fdd041bc5b2076c1997a6b98b1ca33a3ca4fa7",
+      "upstream": "tests/fixtures/workflow/exempt-with-reason.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/invalid-effort.expected.json": {
+      "owner": "harness",
+      "sha256": "5b78ffa7a0fdade938029e1f258d467a1c1fd4379439c09c41478311567aa359",
+      "upstream": "tests/fixtures/workflow/invalid-effort.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/invalid-effort.js": {
+      "owner": "harness",
+      "sha256": "7449d54eacebff6132690d7a6f03b30b08399f50131cb0035bd17b5559a0a820",
+      "upstream": "tests/fixtures/workflow/invalid-effort.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/invalid-model.expected.json": {
+      "owner": "harness",
+      "sha256": "f6bdcb40bb12fbba4b8ae3547fd44373aeb255d6024097c53e90663391c99c09",
+      "upstream": "tests/fixtures/workflow/invalid-model.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/invalid-model.js": {
+      "owner": "harness",
+      "sha256": "73d7a9e8475a0c6dbc27fb72571dcd2a0553b69af98db449a7f6a06916a5b836",
+      "upstream": "tests/fixtures/workflow/invalid-model.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/missing-effort.expected.json": {
+      "owner": "harness",
+      "sha256": "16fcf4c421c6925a6edad9bae6ea6e6a8f60a53ba299f50e9a8cc9c297840f2a",
+      "upstream": "tests/fixtures/workflow/missing-effort.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/missing-effort.js": {
+      "owner": "harness",
+      "sha256": "80d58439d2c32b2d6f07da36f38f6f3bd7332b3a10991da92d3ebb96ba1e9630",
+      "upstream": "tests/fixtures/workflow/missing-effort.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/missing-model.expected.json": {
+      "owner": "harness",
+      "sha256": "d4ca868e1e64c8e0030fa0c5d99ba73cda7958899aa766772af2d4e1ac0533a7",
+      "upstream": "tests/fixtures/workflow/missing-model.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/missing-model.js": {
+      "owner": "harness",
+      "sha256": "7089258e80739c1afcedf83044ee6eb17cf5c7c48f9e954a226b121ce0b39e44",
+      "upstream": "tests/fixtures/workflow/missing-model.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/multiline-nested-template.expected.json": {
+      "owner": "harness",
+      "sha256": "7d9fecd6bed9b4ca2443fc34fe16b0ea5f0fec4c7120c3b6ebe7f8a6530efd13",
+      "upstream": "tests/fixtures/workflow/multiline-nested-template.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/multiline-nested-template.js": {
+      "owner": "harness",
+      "sha256": "c049f27dc2dc227705a977f584f1b2a1db4b008a32feaa99a0843c8e53a5ceb4",
+      "upstream": "tests/fixtures/workflow/multiline-nested-template.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/pipeline-phase-only.expected.json": {
+      "owner": "harness",
+      "sha256": "88b7f53d882a22da317034ffc485ebfe19ab25db8a12a654c56e90c5b144885d",
+      "upstream": "tests/fixtures/workflow/pipeline-phase-only.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/pipeline-phase-only.js": {
+      "owner": "harness",
+      "sha256": "40215a048f162efed4f9c4d42f6855531433df914ccd55fdc6cf4ebf47540f41",
+      "upstream": "tests/fixtures/workflow/pipeline-phase-only.js"
+    },
+    ".claude/lib/self-test-fixtures/workflow/spread-undecidable.expected.json": {
+      "owner": "harness",
+      "sha256": "fe1e28fb0ebb3a9904250ff3a6b01cc1a0f670baa60949983112b7593f470f8b",
+      "upstream": "tests/fixtures/workflow/spread-undecidable.expected.json"
+    },
+    ".claude/lib/self-test-fixtures/workflow/spread-undecidable.js": {
+      "owner": "harness",
+      "sha256": "b027b0cac478fe30b29deeaf031e72a4add7e28b08b0648547d0e6481df7754c",
+      "upstream": "tests/fixtures/workflow/spread-undecidable.js"
+    },
+    ".claude/lib/tier-scan.js": {
+      "owner": "harness",
+      "sha256": "4fdaa4e5ed77c0d858754143b9d476090cee2d70b8e9d22fad8d7f52079ad4bf"
+    },
+    ".claude/lib/VENDOR.md": {
+      "owner": "harness",
+      "sha256": "254157beab43800085d5f1f45bb59122f31c24e6ff6cc0880699e4af910f7b64"
+    },
+    ".claude/lib/walk.js": {
+      "owner": "harness",
+      "sha256": "33558a8e39cbd24ed6f4bcde09c2353c55403e4493556642f07f6ed1b3c3cac1"
+    },
+    ".claude/terse/classes.yml": {
+      "owner": "harness",
+      "sha256": "852cd5400098e25fad74af7adc424d2acca6d55e364f718f3f4f814113e1a3de"
+    },
+    ".claude/terse/gen-terse-blocks.sh": {
+      "owner": "harness",
+      "sha256": "608f18fe9154d7eff94ef92042c71a59cef3fa3e16d03f1b278f43326b792883"
+    },
+    ".claude/terse/ruleset.md": {
+      "owner": "harness",
+      "sha256": "ea5706b2f2e9a27f5a8977454c74ea8717717fec3d205eb99f054e904211b193"
+    },
+    ".claude/settings.json": {
+      "owner": "harness",
+      "sha256": "ddf271cf5e653547939f3bf0e352030a9089c5ae1de61a27c89f4fbb9f7be9b8"
+    },
+    "AGENTS.md": {
+      "owner": "harness",
+      "sha256": "9480bc55cce3125acacc0d75f1fac6a0494b41c1aa5fc62a5506b08458a90810"
+    },
+    ".assistant/INVARIANTS.md": {
+      "owner": "harness",
+      "sha256": "766509c1d604011efe5217c34cc4dfa3df29bb91502d7c24900e2ed6909b44be"
+    }
+  }
+}

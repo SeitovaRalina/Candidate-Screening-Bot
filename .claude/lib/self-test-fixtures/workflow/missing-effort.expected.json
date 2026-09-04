@@ -1,0 +1,1 @@
+{"ok":false,"agentCalls":1,"violations":[{"file":"missing-effort.js","line":1,"column":1,"kind":"no-effort","snippet":"agent('do the thing', { model: 'sonnet' })"}],"exemptions":[],"parseError":null}

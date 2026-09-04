@@ -1,0 +1,1 @@
+{"ok":false,"agentCalls":1,"violations":[{"file":"missing-model.js","line":1,"column":1,"kind":"no-model","snippet":"agent('do the thing', { effort: 'high' })"}],"exemptions":[],"parseError":null}

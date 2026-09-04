@@ -19,3 +19,15 @@ Client requirement, stated twice in the transcript (Тема 3 and Тема 4): 
 ## D-5 — hh.ru personal-account login excluded from MVP
 Regardless of technical feasibility findings from OQ-5, personal-account login is out of MVP scope pending explicit client approval and guardrail review. See `open-questions.md` OQ-5 and `product-overview/anti-stories.md`.
 **Date:** 2026-09-04.
+
+## D-6 — Candidate card restructured to green flags / red flags
+Replaces the earlier "criteria + separate red flags" split with a single symmetric list, each item with a resume quote. Matches the client's own wording in the transcript ("список несоответствий/соответствий") more literally than the original draft. Criteria set expanded beyond the meeting's narrow examples via market research (see `tech-details/existing-solutions.md` and `product-overview/requirements/candidate-screening-criteria.md`) at the client's explicit request for a "universal" solution.
+**Date:** 2026-09-04.
+
+## D-7 — Runtime: plain Python Telegram bot, not Hermes (supersedes D-2's implicit assumption)
+D-2 named Hermes as the channel per playbook default. Hermes is Effective's internal messaging-gateway product and is not available in this build environment, and the demo is time-boxed to the same day. Built instead as a plain Python bot (`python-telegram-bot`) calling the Anthropic API directly. This is a documented deviation, not a silent one — revisit for production handoff, since Hermes would be the correct default once available (attachments, session restart, cron already solved there).
+**Date:** 2026-09-04.
+
+## D-8 — Harness installed manually, not via `/setup`'s interactive flow
+Copied `.claude/{agents,skills,hooks,lib,terse}`, `AGENTS.md`, `.assistant/INVARIANTS.md` by hand from the harness checkout and generated `.harness-lock` with a script, skipping `/setup`'s 6-question interview to save time under the hard deadline (answers were already known from this conversation: PROJECT_TYPE 1, stack backend-python, no omp, existing memory bank preserved). The harness checkout itself has no `.git` at install time, so `.harness-lock`'s `harness_source`/`commit_sha` are placeholder values instead of a pinned `<remote>@<sha>` — `/sync` cannot be run against this lock until the harness checkout gets a real git remote+commit. Flagged in `CLAUDE.md`.
+**Date:** 2026-09-04.

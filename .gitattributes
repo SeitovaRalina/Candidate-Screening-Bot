@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+.claude/hooks/*.sh text eol=lf
+.claude/lib/self-test-fixtures/workflow/*.js text eol=lf

@@ -1,0 +1,57 @@
+# Effective Harness — terse output: agent -> level map.
+#
+# The generator (gen-terse-blocks.sh) reads this file to decide, per agent .md,
+# which terse block to stamp. Frontmatter fields are NOT used for this: Claude Code
+# ignores unknown frontmatter keys, so the mapping lives here instead.
+#
+# level:    full  -> stamp §1 CORE terse ruleset
+#           ultra -> reserved (currently same body as full; kept for future tuning)
+#           off   -> stamp NO block; strip any existing block
+#
+# carveout: true  -> ALSO stamp the §3 STRUCTURED-OUTPUT CARVEOUT clause.
+#                    Set for every agent that emits a structured findings block
+#                    (INVARIANT §3: severity / requires_human / confidence schema).
+#           false -> omit the §3 carveout clause.
+#
+# Adding an agent = add one row. Default level for anything unlisted is `full`
+# without carveout. Keep this list in sync with .claude/agents/*.md.
+
+defaults:
+  level: full
+  carveout: false
+
+agents:
+  # --- Structured-findings emitters (consilium / audit / review): full + §3 carveout ---
+  api:                   { level: full,  carveout: true }
+  architect:             { level: full,  carveout: true }
+  cortex-m-low-level:    { level: full,  carveout: true }
+  devops:                { level: full,  carveout: true }
+  diagnostics:           { level: full,  carveout: true }
+  electronics:           { level: full,  carveout: true }
+  embedded:              { level: full,  carveout: true }
+  embedded-build:        { level: full,  carveout: true }
+  embedded-c-reviewer:   { level: full,  carveout: true }
+  frontend:              { level: full,  carveout: true }
+  researcher:            { level: full,  carveout: true }
+  reviewer:              { level: full,  carveout: true }
+  security:              { level: full,  carveout: true }
+  skeptic:               { level: full,  carveout: true }
+  swiftui-architect:     { level: full,  carveout: true }
+  swiftui-design-critic: { level: full,  carveout: true }
+  test:                  { level: full,  carveout: true }
+  tier-critic:           { level: full,  carveout: true }
+
+  # --- Everything else: full, no §3 carveout (no structured findings block) ---
+  Explore:                { level: full,  carveout: false }
+  android:               { level: full,  carveout: false }
+  anti-bot-evasion:      { level: full,  carveout: false }
+  apple-ci-engineer:     { level: full,  carveout: false }
+  apple-platform-debugger: { level: full, carveout: false }
+  backend:               { level: full,  carveout: false }
+  flutter:               { level: full,  carveout: false }
+  ios:                   { level: full,  carveout: false }
+  proxy-strategist:      { level: full,  carveout: false }
+  scraping-architect:    { level: full,  carveout: false }
+  scraping-diagnostician: { level: full, carveout: false }
+  surface-scout:         { level: full,  carveout: false }
+  web:                   { level: full,  carveout: false }
