@@ -1,3 +1,10 @@
 
 # Effective Harness (managed) - AI-CLI session state, machine-local
 .claude/sessions/
+
+# Python / prototype
+prototype/.venv/
+prototype/__pycache__/
+prototype/**/__pycache__/
+prototype/.pytest_cache/
+prototype/.env

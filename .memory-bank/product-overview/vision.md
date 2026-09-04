@@ -25,7 +25,7 @@ Telegram bot that screens a candidate before a technical interview: compares a r
 
 In scope:
 - Single candidate per request (vacancy + resume in, card out).
-- hh.ru public vacancy parsing.
+- hh.ru public vacancy parsing **by link, pending hh.ru API access** — verified 2026-09-04 that hh.ru closed unauthorized `/vacancies` access in April 2026 (see D-9, OQ-5). Pasted vacancy text works today and is not a fallback, it's the primary supported path until an hh.ru API app is confirmed.
 - Structured verdict + evidence + red flags + questions.
 
 Out of scope (phase 2 / needs separate client sign-off):
