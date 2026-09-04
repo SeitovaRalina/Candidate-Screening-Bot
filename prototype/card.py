@@ -14,7 +14,11 @@ _VERDICT_LABELS = {
 
 
 def _format_flag(flag: Flag, bullet: str) -> str:
-    marker = " [code]" if flag.source == "deterministic" else ""
+    # Not "[code]" - square brackets collide with Telegram Markdown's inline
+    # link syntax ([text](url)) and get silently stripped mid-sentence,
+    # found live testing case 2 ("...2021 - 2024 code" with no brackets at
+    # all in the rendered message).
+    marker = " 🔧" if flag.source == "deterministic" else ""
     return f"{bullet} {flag.text}{marker}\n   > «{flag.quote}»"
 
 

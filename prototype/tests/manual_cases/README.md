@@ -28,7 +28,7 @@ Run each pair through the running bot (`python main.py`, send the vacancy link t
 ## Case 2 — Employer date overlap (deterministic red flag)
 **Vacancy:** https://hh.ru/vacancy/133660218 (Middle/Senior Python-разработчик, ИЦ АЙ-ТЕКО)
 **Resume:** `case-2-employer-overlap-resume.txt`
-**Expected:** `check_employer_date_overlap` fires — two jobs listed as `2021 — 2024` and `2022 — н.в.` (3-year overlap). Card's red flags must include this, verbatim quote, `source=deterministic` (rendered with the `[code]` marker in `card.py`).
+**Expected:** `check_employer_date_overlap` fires — two jobs listed as `2021 — 2024` and `2022 — н.в.` (3-year overlap). Card's red flags must include this, verbatim quote, `source=deterministic` (rendered with the 🔧 marker in `card.py`).
 
 ## Case 3 — Skill/title mismatch (LLM-judgment red flag, not deterministic)
 **Vacancy:** https://hh.ru/vacancy/131921142 (Python / ML Engineer, Фармстандарт.ИТ)

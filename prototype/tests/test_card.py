@@ -14,7 +14,7 @@ def test_render_card_includes_evidence_and_disclaimer():
 
     assert "Подходит" in text
     assert "5 лет на Python в бэкенде" in text
-    assert "[code]" in text  # deterministic flag marker
+    assert "🔧" in text  # deterministic flag marker (not "[code]" - see card.py)
     assert "Финальное решение — за вами" in text
 
 
