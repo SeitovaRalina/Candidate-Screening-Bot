@@ -11,6 +11,14 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 
+# Telegram's Bot API can be unreachable from some Russian server IPs. If set,
+# used explicitly for python-telegram-bot's requests (bot.py); httpx (used by
+# both this and the anthropic SDK) also auto-picks up the standard
+# HTTPS_PROXY/HTTP_PROXY env vars on its own for vacancy.py/screening.py's
+# calls, so setting those two is usually enough on its own - PROXY_URL only
+# matters for python-telegram-bot specifically wiring the same proxy in.
+PROXY_URL = os.environ.get("PROXY_URL", "")
+
 # Routed through Effective's internal LiteLLM gateway (llm.effective.land), not
 # api.anthropic.com directly - ANTHROPIC_API_KEY holds the gateway's virtual key
 # (issued by whoever admins the gateway), not a raw Anthropic key. Empty

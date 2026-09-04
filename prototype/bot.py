@@ -30,7 +30,7 @@ import re
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, CommandHandler, filters
 
-from config import LOCAL_DEBUG_LOGGING, TELEGRAM_BOT_TOKEN, require_config
+from config import LOCAL_DEBUG_LOGGING, PROXY_URL, TELEGRAM_BOT_TOKEN, require_config
 from deterministic_checks import run_all_deterministic_checks
 from resume_extract import ResumeExtractionError, extract_resume_text
 from screening import ScreeningIncompleteError, screen_candidate
@@ -322,7 +322,13 @@ async def _run_screening_and_reply(message, pending: dict) -> None:
 
 def build_application() -> Application:
     require_config()
-    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    builder = Application.builder().token(TELEGRAM_BOT_TOKEN)
+    if PROXY_URL:
+        # Telegram's Bot API is unreliable/blocked from some Russian server
+        # IPs - route both regular requests and long-polling through the
+        # same proxy. Needs httpx[socks] installed if PROXY_URL is socks5://.
+        builder = builder.proxy(PROXY_URL).get_updates_proxy(PROXY_URL)
+    application = builder.build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT | filters.Document.ALL, handle_message))
     return application
