@@ -2,11 +2,6 @@
 
 > Unresolved items surfaced by the 2026-09-04 kickoff transcript. Client's own disclaimer: the transcript may be inaccurate — do not build against any item here until Anton confirms. When resolved, move to `decisions.md`.
 
-## OQ-1 — Resume format: text or file? (priority: HIGH)
-**Question:** Original discovery assumed resume arrives as plain text. Transcript (Тема 3): "просто скинуть текст вакансии и файл резюме" — resume is a **file**. Which formats (PDF / DOCX / scanned image requiring OCR)?
-**Why it matters:** Changes the tool list — a text-extraction step is needed that wasn't scoped. OCR is a materially bigger scope than PDF/DOCX text extraction.
-**Next step:** Ask Anton directly; get 2-3 real sample resume files in their actual format.
-
 ## OQ-2 — Education requirement, exact meaning (priority: MEDIUM, was HIGH)
 **Question:** Transcript Тема 2: "Наличие высшего образования, желательно не совпадающего с требуемым опытом работы." Two readings: (a) higher education itself is a required/scored criterion; (b) this is the date-overlap red flag (education years vs work-experience years must not overlap) restated.
 **Why it matters:** (a) and (b) are different logic — (a) is a fit criterion, (b) is a fabrication red flag. Building the wrong one produces a card that misreads candidates.
@@ -28,6 +23,7 @@
 **Resolved sub-problem (D-9 → D-10, 2026-09-04):** the general "public vacancy link doesn't work" blocker is fixed — `vacancy.py` now reads the public vacancy webpage's embedded JSON-LD instead of the closed api.hh.ru endpoint, no login needed, verified against a real live vacancy. **This OQ now covers ONLY hidden/direct vacancies that aren't reachable this way** (not on the public page at all).
 **Why it matters:** Reaching a hidden/direct vacancy still requires either (a) a genuine authenticated hh.ru session (personal login — a guardrail Mentor Review trigger per harness playbook 08, independent of feasibility) or (b) a registered hh.ru employer API app with OAuth (the legitimate path — user authenticates directly with hh.ru's own login page, bot never touches a password; requires app registration/moderation on dev.hh.ru, likely not same-day).
 **Next step:** Ask Anton: does the company have (or can register) an official hh.ru employer API app for path (b)? Do not build (a) — password-based/session scraping — regardless of the answer; see anti-stories.md. This is genuinely lower urgency now than the general link case was, since public vacancies (the MVP's actual scope) already work.
+**Confirmed (D-12, 2026-09-04):** Anton confirmed public-only scope is correct and the personal-login case is a separate story, matching the framing above. Only the specific "does the company have a registered API app" sub-question remains open.
 
 ## OQ-6 — What exactly are the "5 stages" of the process (priority: LOW)
 **Question:** Transcript (Тема 1) states the screening process has 5 stages but does not enumerate them beyond what's inferred from Тема 3 (compare -> flag -> output -> recommend -> verdict).

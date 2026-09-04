@@ -13,6 +13,14 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
 
+# Client requirement (2026-09-04, reply to communications/2026-09-04-kickoff-followup.md
+# item 4): zero resume storage anywhere in production, "even temporary" -
+# extends to logs, not just a database. Default OFF (production posture);
+# turn on only on your own machine for local debugging, never in a deployed
+# instance. When off, logs carry counts/verdicts only, never vacancy titles
+# or anything that could roundtrip to a specific candidate/resume.
+LOCAL_DEBUG_LOGGING = os.environ.get("LOCAL_DEBUG_LOGGING", "false").strip().lower() == "true"
+
 # How long to hold a candidate's vacancy/resume in memory while waiting for the
 # second half of the pair (in seconds). This is per-submission pairing state
 # only, cleared right after a card is produced — not the same thing as

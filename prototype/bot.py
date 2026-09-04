@@ -13,7 +13,7 @@ import logging
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, CommandHandler, filters
 
-from config import TELEGRAM_BOT_TOKEN, require_config
+from config import LOCAL_DEBUG_LOGGING, TELEGRAM_BOT_TOKEN, require_config
 from deterministic_checks import run_all_deterministic_checks
 from resume_extract import ResumeExtractionError, extract_resume_text
 from screening import screen_candidate
@@ -65,7 +65,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _run_screening_and_reply(message, pending)
         except VacancyFetchError as exc:
             logger.warning("vacancy fetch failed: %s", exc)
-            await message.reply_text(f"Не удалось получить вакансию: {exc}")
+            # Exact phrasing requested by Anton (reply to kickoff-followup.md
+            # item 2): the card/reply must lead with this line for any
+            # inaccessible/unparseable vacancy, not a generic technical error.
+            await message.reply_text(f"Вакансия недоступна для парсинга.\n\nПодробности: {exc}")
         except ResumeExtractionError as exc:
             logger.warning("resume extraction failed: %s", exc)
             await message.reply_text(f"Не удалось прочитать резюме: {exc}")
@@ -89,7 +92,10 @@ async def _run_screening_and_reply(message, pending: dict) -> None:
         file_bytes=file_bytes, file_name=file_name, plain_text=pending["resume_text"]
     )
 
-    logger.info("screening started (vacancy_title=%r, resume_chars=%d)", vacancy.title, len(resume_text))
+    if LOCAL_DEBUG_LOGGING:
+        logger.info("screening started (vacancy_title=%r, resume_chars=%d)", vacancy.title, len(resume_text))
+    else:
+        logger.info("screening started")
 
     pre_findings = run_all_deterministic_checks(resume_text)
     # screen_candidate uses the sync Anthropic SDK client - offload to a thread
@@ -99,7 +105,16 @@ async def _run_screening_and_reply(message, pending: dict) -> None:
     )
 
     await message.reply_text(render_card(card), parse_mode="Markdown")
-    logger.info("screening finished (verdict=%s)", card.verdict)
+
+    if LOCAL_DEBUG_LOGGING:
+        logger.info("screening finished (verdict=%s)", card.verdict)
+    else:
+        logger.info("screening finished")
+
+    # resume_text / vacancy / pre_findings / card all go out of scope here and
+    # are not persisted anywhere (no DB write, no file write, no queue) - this
+    # is the whole "no storage, not even temporary" requirement, enforced by
+    # simply never writing them anywhere rather than writing-then-deleting.
 
 
 def build_application() -> Application:
