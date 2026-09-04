@@ -14,6 +14,7 @@ Guardrail implementation notes (see .memory-bank/steerings/project-rules.md):
 """
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import anthropic
@@ -39,6 +40,7 @@ _SCREENING_TOOL = {
             "invite_to_interview": {"type": "boolean"},
             "green_flags": {
                 "type": "array",
+                "minItems": 1,
                 "items": {
                     "type": "object",
                     "properties": {
@@ -47,6 +49,21 @@ _SCREENING_TOOL = {
                     },
                     "required": ["text", "quote"],
                 },
+                "description": "Never empty - every candidate has at least one relevant strength worth naming, even a weak candidate.",
+            },
+            # interview_questions is placed before red_flags deliberately, not
+            # alphabetically or by "importance" - live testing against the
+            # LiteLLM gateway (D-23) found the LAST property in this schema
+            # gets silently dropped from the tool_use payload outright
+            # (missing key, not just an empty list) on every call, regardless
+            # of which field it was. red_flags tolerates being dropped far
+            # better (an empty red_flags is already a valid, common outcome)
+            # than interview_questions or green_flags would.
+            "interview_questions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string"},
+                "description": "Questions targeted at this specific candidate's gaps/red flags, not generic questions. Never empty.",
             },
             "red_flags": {
                 "type": "array",
@@ -58,14 +75,10 @@ _SCREENING_TOOL = {
                     },
                     "required": ["text", "quote"],
                 },
-            },
-            "interview_questions": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Questions targeted at this specific candidate's gaps/red flags, not generic questions.",
+                "description": "Can be empty for a genuinely clean, strong candidate - do not invent flags just to fill this.",
             },
         },
-        "required": ["verdict", "invite_to_interview", "green_flags", "red_flags", "interview_questions"],
+        "required": ["verdict", "invite_to_interview", "green_flags", "interview_questions", "red_flags"],
     },
 }
 
@@ -84,6 +97,11 @@ _SYSTEM_PROMPT = """\
 не автоматическое отклонение кандидата.
 5. Ниже уже даны красные флаги, найденные детерминированным кодом (даты, шаблонный текст). \
 Включи их в свой ответ буквально (не переформулируй цитаты), и добавь свои находки поверх них.
+6. green_flags и interview_questions НИКОГДА не должны быть пустыми списками - у любого кандидата \
+есть хотя бы одна релевантная сильная сторона (даже у слабого - например, реальный опыт с нужным языком, \
+профильное образование) и минимум 2-3 конкретных вопроса для интервью, привязанных именно к этому резюме \
+и этой вакансии. Пустой red_flags - это нормально для сильного кандидата, пустые green_flags или \
+interview_questions - никогда не нормально, это означает, что ты недоработал(а) карточку.
 
 Критерии оценки (полный список - источник для green/red flags):
 {criteria}
@@ -115,15 +133,22 @@ def _build_user_message(vacancy: VacancyInfo, resume_text: str, pre_findings: li
 """
 
 
-def screen_candidate(*, vacancy: VacancyInfo, resume_text: str, pre_findings: list[Flag]) -> CandidateCard:
-    # base_url=None (LITELLM_BASE_URL="") makes the SDK call api.anthropic.com
-    # directly; otherwise it hits the LiteLLM gateway's Anthropic-passthrough
-    # route, which appends /v1/messages itself - do not add it here.
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, base_url=LITELLM_BASE_URL or None)
+_REQUIRED_KEYS = ("verdict", "invite_to_interview", "green_flags", "interview_questions", "red_flags")
+_MAX_ATTEMPTS = 3  # see D-23/D-24: this gateway has been observed dropping a required field outright
 
-    system_prompt = _SYSTEM_PROMPT.format(criteria=_load_criteria())
-    user_message = _build_user_message(vacancy, resume_text, pre_findings)
 
+class ScreeningIncompleteError(RuntimeError):
+    """Raised when the LLM gateway never returns a complete payload after all
+    retries. Deliberately NOT swallowed into a partial card with defaults —
+    a hiring-adjacent tool silently rendering a missing red_flags as "нет"
+    (i.e. "checked, found nothing") would be worse than an explicit failure,
+    since nobody could tell the difference from a genuinely clean candidate.
+    See project-rules.md: "every red flag must cite evidence... no
+    unsupported verdicts" — an unverified absence is an unsupported verdict.
+    """
+
+
+def _call_model(client: anthropic.Anthropic, *, system_prompt: str, user_message: str) -> dict:
     response = client.messages.create(
         model=ANTHROPIC_MODEL,
         max_tokens=4096,
@@ -132,9 +157,59 @@ def screen_candidate(*, vacancy: VacancyInfo, resume_text: str, pre_findings: li
         tool_choice={"type": "tool", "name": "submit_screening_card"},
         messages=[{"role": "user", "content": user_message}],
     )
-
     tool_use = next(block for block in response.content if block.type == "tool_use")
-    payload = tool_use.input
+    return tool_use.input
+
+
+def screen_candidate(*, vacancy: VacancyInfo, resume_text: str, pre_findings: list[Flag]) -> CandidateCard:
+    # base_url=None (LITELLM_BASE_URL="") makes the SDK call api.anthropic.com
+    # directly; otherwise it hits Effective's LiteLLM gateway's root unified
+    # endpoint (D-19 - not the /anthropic passthrough, that 404s on this
+    # gateway), which appends /v1/messages itself - do not add it here.
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, base_url=LITELLM_BASE_URL or None)
+
+    system_prompt = _SYSTEM_PROMPT.format(criteria=_load_criteria())
+    base_user_message = _build_user_message(vacancy, resume_text, pre_findings)
+    logger = logging.getLogger("candidate_screening_bot")
+
+    payload: dict = {}
+    missing: list[str] = list(_REQUIRED_KEYS)
+    user_message = base_user_message
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        payload = _call_model(client, system_prompt=system_prompt, user_message=user_message)
+        # D-23/D-24: this gateway's "claude-sonnet-5" alias is not confirmed
+        # to be genuine Anthropic Claude (see decisions.md) and has been
+        # observed dropping a "required" tool-schema field from the payload
+        # outright - a missing key, not just an empty list - which real
+        # Claude essentially never does under forced tool_choice. Reordering
+        # the schema (this file, above) made it rare, not impossible, so
+        # every attempt is still verified for ALL required keys, not just
+        # assumed complete because the call didn't raise.
+        missing = [key for key in _REQUIRED_KEYS if key not in payload]
+        if not missing:
+            break
+        logger.warning(
+            "screen_candidate: incomplete tool_use payload on attempt %d, missing %s%s",
+            attempt,
+            missing,
+            " - retrying" if attempt < _MAX_ATTEMPTS else " - out of retries",
+        )
+        # Give the model itself a chance to self-correct on retry, in case
+        # this is (also) an instruction-following gap and not purely a
+        # gateway/translation artifact.
+        user_message = (
+            f"{base_user_message}\n\n"
+            f"### ВАЖНО - предыдущая попытка была неполной\n"
+            f"В прошлом ответе отсутствовали обязательные поля: {', '.join(missing)}. "
+            f"Верни ВСЕ поля инструмента submit_screening_card, включая эти - если список "
+            f"пуст, верни пустой массив [], но поле должно присутствовать."
+        )
+
+    if missing:
+        raise ScreeningIncompleteError(
+            f"LLM-гейтвей не вернул полный ответ после {_MAX_ATTEMPTS} попыток "
+            f"(не хватает: {', '.join(missing)}). Карточка не может быть построена надёжно."
+        )
 
     green_flags = [Flag(text=f["text"], quote=f["quote"], source="llm") for f in payload["green_flags"]]
     red_flags = [Flag(text=f["text"], quote=f["quote"], source="llm") for f in payload["red_flags"]]

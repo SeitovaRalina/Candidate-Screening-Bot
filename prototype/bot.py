@@ -33,7 +33,7 @@ from telegram.ext import Application, ContextTypes, MessageHandler, CommandHandl
 from config import LOCAL_DEBUG_LOGGING, TELEGRAM_BOT_TOKEN, require_config
 from deterministic_checks import run_all_deterministic_checks
 from resume_extract import ResumeExtractionError, extract_resume_text
-from screening import screen_candidate
+from screening import ScreeningIncompleteError, screen_candidate
 from card import render_card
 from vacancy import VacancyFetchError, VacancyInfo, fetch_vacancy
 
@@ -240,6 +240,15 @@ async def _finalize_resume_and_screen(message, context: ContextTypes.DEFAULT_TYP
     except ResumeExtractionError as exc:
         logger.warning("resume extraction failed: %s", exc)
         await message.reply_text(f"Не удалось прочитать резюме: {exc}\n\n{_ASK_FOR_RESUME}")
+        return  # keep the accepted vacancy pending, let them retry the resume only
+    except ScreeningIncompleteError as exc:
+        # Never show a card that might be silently missing a real flag - see
+        # the exception's own docstring in screening.py (D-24).
+        logger.error("screening incomplete: %s", exc)
+        await message.reply_text(
+            "ИИ-гейтвей вернул неполный ответ несколько раз подряд — карточку не показываю, "
+            "чтобы не скрыть возможный red flag. Попробуйте отправить то же резюме ещё раз."
+        )
         return  # keep the accepted vacancy pending, let them retry the resume only
     except Exception:  # noqa: BLE001 - top-level handler boundary, must not crash the bot
         logger.exception("unexpected error during screening")
