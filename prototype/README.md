@@ -54,6 +54,5 @@ See `../.memory-bank/tech-details/stack.md` for the full rationale. Short versio
 
 ## Known outstanding items (2026-09-04, post-demo-prep)
 
-- **Telegram bot token has not been rotated** despite being exposed in chat/logs three times during this build. Revoke and reissue via `@BotFather` (`/revoke`) once the demo is done, then update `.env` on the server.
+
 - **Small UX gap:** `_looks_like_small_talk`/`_looks_like_off_topic` in `bot.py` don't recognize third-person phrasing like "Что умеет бот?" (only "что ТЫ умеешь") - falls through to the generic off-topic redirect instead of the helpful `/start` explanation. Not fixed yet - flagged, decision pending.
-- **Unexplained parallel work found in the project directory:** a git worktree (`.worktrees/hermes-runtime`) and `swarm-report/hermes-*-plan.md` files appeared during this session, apparently a separate in-progress attempt at porting this bot to a Hermes plugin. Not touched or investigated further (see D-26) - resolve provenance before the next session builds on top of it.
